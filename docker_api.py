@@ -131,28 +131,76 @@ def create_container(region="r1",
 
     return cont_id 
 
-def create_container2():
+def _create_container(name="", data=None):
+    headers = {"Content-Type": "application/json"}
+    if not name:
+        api_endpoint = get_url("/containers/create")
+    else:
+        api_endpoint = get_url("/containers/create?name={}".format(name))
+    r = requests.post(api_endpoint,
+            data=json.dumps(data), headers=headers)
+    return r
+    
+def create_web_server(db=True):
+    #Doesn't work
+    #See: https://hub.docker.com/_/wordpress/
+    #https://hub.docker.com/_/mysql/
+    #http://www.sitepoint.com/how-to-use-the-official-docker-wordpress-image/
+    if db:
+        #create DB
+        data = {
+            "Image": "span/mysql:v2", #"mysql:latest",
+            "ExposedPorts": {
+                     "3306/tcp": {}
+            },
+            "Env": [
+                "MYSQL_ROOT_PASSWORD=password",
+                "MYSQL_DATABASE=wordpress"
+            ]
+        } 
+        r = _create_container(name="mydb2", data=data)
+        print r.status_code
+        print start_container(r.json()["Id"])
+    else:
+        #create web server
+        data = {
+            "Image": "wordpress:latest", 
+            "ExposedPorts": {
+                     "80/tcp": {}
+            },
+            "Env": [
+                "WORDPRESS_DB_PASSWORD=password"
+            ],
+            "HostConfig":{
+                "PortBindings": { "80/tcp": [{ "HostPort": "8080" }] },
+                "Links":["mydb2:mysql"]
+            }
+        }
+    
+        print "Starting webserver"
+        r = _create_container(name="mywp2", data=data)
+        print r.status_code
+        print start_container(r.json()["Id"])
+    
+
+def create_web_server2():
+    """Uses the tutum/wordpress image with 
+    wordpress + db in same image
+    """
     data = {
-        "Image": "training/webapp", 
-        "Cmd": ["python app.py"],
-        "AttachStdout": False,
-        "AttachStderr": False,
+        "Image":"tutum/wordpress",
+        "ExposedPorts": {
+                 "80/tcp": {}
+        },
+        "HostConfig":{
+            "PortBindings": { "80/tcp": [{ "HostPort": "8080" }] },
+        }
     }
 
-    headers = {"Content-Type": "application/json"}
-    r = requests.post(get_url("/containers/create"), 
-            data=json.dumps(data), headers=headers)
-
+    print "Starting webserver"
+    r = _create_container(name="webserver", data=data)
     print r.status_code
-
-    if r.status_code == 201:
-        cont_id = r.json()["Id"]
-    else:
-        print "Received {}: {}".format(r.status_code, r.reason)
-        sys.exit(1)
-
-    return cont_id 
-    
+    print start_container(r.json()["Id"])
     
 
 def start_container(cont_id):
@@ -167,13 +215,13 @@ def remove_container(cont_id):
 def remove_recent(force=True):
     """
     Stop and remove containers created in 
-    last 30 minutes
+    last 45 minutes
     """
     #epoch time
     current_time = int(time.time()) 
 
     for cont in get_containers():
-        if current_time - cont["Created"] < 30 * 60:
+        if current_time - cont["Created"] < 45 * 60:
             print "deleting {} [{}]".format(cont["Id"], cont["Names"][0])
             if force: stop_container(cont["Id"])
             remove_container(cont["Id"])

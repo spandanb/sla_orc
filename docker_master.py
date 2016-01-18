@@ -43,9 +43,13 @@ if __name__ == "__main__":
     #get_containers()
     #cont_id = create_container()
     #cont_id = create_container(image="training/webapp", cmd=["/usr/bin/python app.py"])
-    cont_id = create_container2()
-    print "created container with ID {}".format(cont_id)
-    print start_container(cont_id)
+    
+    create_web_server(db=True)
+    time.sleep(60)
+    create_web_server(db=False)
+
+    #print "created container with ID {}".format(cont_id)
+    #print start_container(cont_id)
     #check_cost_and_migrate()
 
 
