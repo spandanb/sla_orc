@@ -1,0 +1,10 @@
+
+#Misc tasks
+- include: preamble.yaml
+
+#Sets up docker engine on all nodes
+- include: docker_engine_install.yaml 
+
+#Sets up docker swarm
+- include: docker_swarm_setup.yaml 
+

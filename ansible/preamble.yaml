@@ -1,0 +1,6 @@
+---
+- hosts: all 
+  remote_user: ubuntu  
+  tasks:
+     - name: get screenrc 
+       get_url: url=https://raw.githubusercontent.com/spandanb/utils/master/.screenrc dest=/home/ubuntu mode=0666

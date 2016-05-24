@@ -1,0 +1,41 @@
+---
+- hosts: master
+  remote_user: ubuntu  
+  tasks:
+     - apt: pkg=unzip state=installed
+       become: true
+     
+     - name: download consul key-value store
+       get_url: dest=/home/ubuntu url=https://releases.hashicorp.com/consul/0.6.3/consul_0.6.3_linux_amd64.zip
+       
+#     - shell: unzip /home/ubuntu/consul_0.6.3_linux_amd64.zip  -d /home/ubuntu
+     - unarchive: src=/home/ubuntu/consul_0.6.3_linux_amd64.zip dest=/home/ubuntu copy=no
+
+     - copy: src=./master_screen.sh dest=/home/ubuntu
+
+     - shell: chdir=/home/ubuntu bash master_screen.sh r1
+
+- hosts: slaves
+  remote_user: ubuntu  
+  tasks:
+     - copy: src=./slave_screen.sh dest=/home/ubuntu
+
+     - shell: chdir=/home/ubuntu bash slave_screen.sh {{ master_ip }} r2 
+
+
+#NOTE: This is the old way of installing docker swarm
+#- hosts: master
+#  remote_user: ubuntu
+#  tasks: 
+#    #these don't have to necessarily be done on the master
+#    - name: pull the swarm image
+#      command: docker pull swarm 
+#      become: true
+#
+#    - name: create the swarm cluster
+#      shell: docker run --rm swarm create >> cluster_id.txt
+#
+#    - name: copy output
+#      #copies [remote]:$HOME/<src> -> [local]:<dest>/<host addr>/<src filename>
+#      fetch: src=cluster_id.txt dest=./from_host 
+#
